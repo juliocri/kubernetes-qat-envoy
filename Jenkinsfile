@@ -8,7 +8,13 @@ pipeline {
       stages {
         stage('Pre-steps') {
           steps {
+            script {
+              currentBuild.description = "TESTING PR#${QAT_PR_ID}"
+            }
             retry(count: 3) {
+              sh 'true | git remote add upstream https://github.com/intel/kubernetes-qat-envoy'
+              sh 'git fetch upstream pull/${QAT_PR_ID}/head:test_pr -f'
+              sh 'git rebase test_pr'
               sh 'git submodule update --init --recursive'
               sh 'docker system prune -a -f'
             }
@@ -202,122 +208,13 @@ pipeline {
         }
       }
     }
-    stage('Performance test') {
-      parallel {
-        stage('dh895xcc') {
-          agent {
-            label "dh895xcc"
-          }
-          stages {
-            stage('Cluster init') {
-              steps {
-                retry(count: 2) {
-                  unstash 'intel-device-plugins-for-kubernetes'
-                  sh './e2e/qat/cluster-init.sh'
-                }
-              }
-            }
-            stage('Handshake 1') {
-              steps {
-                withCredentials([sshUserPrivateKey(credentialsId: "K6-Runner", keyFileVariable: 'SSH_KEY')]) {
-                  sh './e2e/tests/handshake1/run.sh'
-                }
-              }
-            }
-            stage('Loopback 1') {
-              steps {
-                withCredentials([sshUserPrivateKey(credentialsId: "K6-Runner", keyFileVariable: 'SSH_KEY')]) {
-                  sh './e2e/tests/loopback1/run.sh'
-                }
-              }
-            }
-            stage('K8s 1') {
-              steps {
-                sh './e2e/tests/k8s1/run.sh'
-              }
-            }
-          }
-          post {
-            always {
-              stash name: "dh895xcc", includes: "dh895xcc/**/*"
-              sh './e2e/k8s/clean.sh'
-              sh './e2e/docker/clean.sh'
-              deleteDir()
-            }
-          }
-        }
-        stage('c6xx') {
-          agent {
-            label "c6xx"
-          }
-          stages {
-            stage('Cluster init') {
-              steps {
-                retry(count: 2) {
-                  unstash 'intel-device-plugins-for-kubernetes'
-                  sh './e2e/qat/cluster-init.sh'
-                }
-              }
-            }
-            stage('Handshake 1') {
-              steps {
-                withCredentials([sshUserPrivateKey(credentialsId: "K6-Runner", keyFileVariable: 'SSH_KEY')]) {
-                  sh './e2e/tests/handshake1/run.sh'
-                }
-              }
-            }
-            stage('Loopback 1') {
-              steps {
-                withCredentials([sshUserPrivateKey(credentialsId: "K6-Runner", keyFileVariable: 'SSH_KEY')]) {
-                  sh './e2e/tests/loopback1/run.sh'
-                }
-              }
-            }
-            stage('K8s 1') {
-              steps {
-                sh './e2e/tests/k8s1/run.sh'
-              }
-            }
-          }
-          post {
-            always {
-              stash name: "c6xx", includes: "c6xx/**/*"
-              sh './e2e/k8s/clean.sh'
-              sh './e2e/docker/clean.sh'
-              deleteDir()
-            }
-          }
-        }
-      }
-    }
-    stage("Results") {
-      agent {
-        label "logs"
-      }
-      stages {
-        stage("Publish results") {
-          steps {
-            unstash 'dh895xcc'
-            unstash 'c6xx'
-            sh "mkdir -p $LOG_DIRECTORY"
-            sh "mv ./dh895xcc $LOG_DIRECTORY"
-            sh "mv ./c6xx $LOG_DIRECTORY"
-          }
-        }
-      }
-      post {
-        always {
-          deleteDir()
-        }
-      }
-    }
   }
   post {
     success {
-      emailext body: 'Jenkins log: ${JENKINS_BLUE_OCEAN_URL_QAT}, Results: ${LOG_URL}, Dashboard: ${QAT_DASHBOARD}', subject: 'SUCCESS: kubernetes-qat-envoy #${BUILD_NUMBER}', to: '$QAT_ENVOY_MAILING_LIST'
+      emailext body: 'http://k8s-ci.intel.com:9090/blue/organizations/jenkins/kubernetes-qat-envoy/activity', subject: 'SUCCESS: kubernetes-qat-envoy PR#$QAT_PR_ID', to: '$QAT_ENVOY_MAILING_LIST'
     }
     failure {
-      emailext body: 'Jenkins log: ${JENKINS_BLUE_OCEAN_URL_QAT}', subject: 'FAILURE: kubernetes-qat-envoy #${BUILD_NUMBER}', to: '$QAT_ENVOY_MAILING_LIST'
+      emailext body: 'http://k8s-ci.intel.com:9090/blue/organizations/jenkins/kubernetes-qat-envoy/activity', subject: 'FAILURE: kubernetes-qat-envoy PR#$QAT_PR_ID', to: '$QAT_ENVOY_MAILING_LIST'
     }
   }
 }
