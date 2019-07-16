@@ -1,4 +1,5 @@
 #!/bin/bash
-cd ./vagrant
+WORKDIR=${WORKDIR:-.}
+cd $WORKDIR/vagrant
 source _commons.sh
 install_docker

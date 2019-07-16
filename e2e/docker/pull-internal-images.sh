@@ -1,6 +1,6 @@
 #!/bin/bash
 # Script to retrieve qat images from the internal registry
-source ./e2e/vars.sh
+DOCKER_QAT_REGISTRY=${DOCKER_QAT_REGISTRY:-"127.0.0.1:5000"}
 
 docker pull ${DOCKER_QAT_REGISTRY}/envoy-qat:devel
 docker pull ${DOCKER_QAT_REGISTRY}/envoy-qat:clr

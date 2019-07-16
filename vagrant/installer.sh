@@ -27,12 +27,25 @@ install_deps
 # QAT Driver installation
 ansible-playbook -vvv -i ./inventory/hosts.ini configure-qat.yml | tee setup-qat.log
 
-# Kubernetes installation
-install_k8s
-
 # QAT Plugin installation
 install_docker
-ansible-playbook -vvv -i ./inventory/hosts.ini configure-qat-envoy.yml | tee setup-qat-envoy.log
+
+# Kubernetes installation
+CPU_MANAGER_POLICY=${CPU_MANAGER_POLICY:-none} install_k8s
+
+# If DOCKER_QAT_REGISTRY is set, then we pull images on there,
+# and we can skip local builds on next steps.
+tags=""
+if [ -n "${DOCKER_QAT_REGISTRY}" ]; then
+  tags="--tags \"driver,plugin\""
+  DOCKER_QAT_REGISTRY=$DOCKER_QAT_REGISTRY bash ../e2e/docker/set-registry.sh
+  DOCKER_QAT_REGISTRY=$DOCKER_QAT_REGISTRY bash ../e2e/docker/pull-internal-images.sh
+fi
+
+# Deploy qat-plugin
+# set tags to be installed example: `--tags="driver,plugin"`,
+# leave blank to install all the ansible playbook.
+sudo sh -c "ansible-playbook -vvv -i ./inventory/hosts.ini configure-qat-envoy.yml $tags | tee setup-qat-envoy.log"
 
 # Kata containers configuration
 if [[ "${CONTAINER_MANAGER:-docker}" == "crio" ]]; then
@@ -54,4 +67,7 @@ if [[ "${CONTAINER_MANAGER:-docker}" == "crio" ]]; then
     done
     kubectl set image daemonset/intel-qat-kernel-plugin intel-qat-kernel-plugin=localhost:5000/intel-qat-plugin:devel
 fi
+
 ./postchecks_qat_plugin.sh
+# Deploy K8s secrets to be ready for sample and/or tests.
+install_tls_secrets

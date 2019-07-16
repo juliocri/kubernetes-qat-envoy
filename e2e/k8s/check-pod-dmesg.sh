@@ -1,13 +1,14 @@
 #!/bin/bash
 # Script to check if deployment pods and svc are OK.
-./e2e/k8s/clean-deployment.sh;
+WORKDIR=${WORKDIR:-.}
+WORKDIR=$WORKDIR bash $WORKDIR/e2e/k8s/clean-deployment.sh;
 
 # If a image is defined as variable then we switch the value in the deploy file;
 if [ -n "$IMAGE" ]; then
-  sed -i "s/image: .*:devel/image: ${IMAGE}/g" ./deployments/${DEPLOY}.yaml;
+  sed -i "s/image: .*:devel/image: ${IMAGE}/g" $WORKDIR/deployments/tmp/${DEPLOY}.yaml;
 fi
 
-kubectl apply -f ./deployments/${DEPLOY}.yaml && sleep 30s;
+kubectl apply -f $WORKDIR/deployments/tmp/${DEPLOY}.yaml && sleep 30s;
 STATUS=$(kubectl get pods | grep envoy | awk '{print $3}');
 if [ "$STATUS" == "Running" ]; then
   echo "OK: pod running.";

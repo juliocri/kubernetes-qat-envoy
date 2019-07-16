@@ -179,6 +179,7 @@ function install_k8s {
     # Configure environment
     mkdir -p "$HOME/.kube"
     cp ./inventory/artifacts/admin.conf "$HOME/.kube/config"
+    sudo ln -fs /usr/local/bin/kubectl /usr/bin/kubectl
 }
 
 # install_dashboard() - Function that installs Helms, InfluxDB and Grafana Dashboard

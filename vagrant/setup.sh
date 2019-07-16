@@ -11,7 +11,7 @@
 set -o nounset
 set -o pipefail
 
-local modify_host=0
+modify_host=0
 vagrant_version=2.2.4
 if ! vagrant version &>/dev/null; then
     enable_vagrant_install=true

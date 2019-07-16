@@ -14,16 +14,44 @@
     - name: Load krd variables
       include_vars:
         file: krd-vars.yml
+      tags:
+        - "driver"
+        - "plugin"
+    - name: get qat devices
+      shell: /usr/local/bin/adf_ctl status | grep up | awk '{print $4 substr($1, 4)}' | tr -d ','
+      register: qat_devices
+      tags:
+        - "driver"
+    - name: Delete default qat config files
+      file:
+        path: /etc/"{{ item }}".conf
+        state: absent
+      with_items: "{{ qat_devices.stdout_lines }}"
+      tags:
+        - "driver"
+    - name: ensure SHIM config section
+      copy: src={{ qat_envoy_dest }}/configs/c6xx_devX.conf dest=/etc/{{ item }}.conf
+      with_items: "{{ qat_devices.stdout_lines }}"
+      tags:
+        - "driver"
+    - name: restart qat services
+      command: /usr/local/bin/adf_ctl restart
+      tags:
+        - "driver"
     - name: retrieve QAT driver
       get_url:
         url: "{{ qat_plugin.url }}"
         dest: "{{ qat_plugin.dest }}"
+      tags:
+        - "docker-build"
     - name: configure docker client
       block:
       - name: create docker config folder
         file:
           state: directory
           path: /root/.docker/
+        tags:
+          - "docker-build"
       - name: configure docker client to use proxy values
         copy:
           dest: "/root/.docker/config.json"
@@ -40,6 +68,8 @@
               }
             }
       when: lookup('env','http_proxy') != "fooproxy" or lookup('env','https_proxy') != "fooproxy" or lookup('env','no_proxy') != "fooproxy"
+      tags:
+        - "docker-build"
     - name: get qat plugin pod name
       shell: "/usr/local/bin/kubectl get pods | grep intel-qat-plugin | awk '{print $1}'"
       register: intel_qat_plugin_pod
@@ -63,23 +93,29 @@
       loop:
         - envoy-qat
         - intel-qat-plugin
+      tags:
+        - "docker-build"
     - name: build QAT-accelerated envoy image
-# NOTE: docker_image module doesn't take proxy values defined in ~/.docker/config.json
-#      docker_image:
-#        dockerfile: Dockerfile.envoy
-#        path: "{{ qat_envoy_dest }}"
-#        name: envoy-qat
-#        tag: devel
+      # NOTE: docker_image module doesn't take proxy values defined in ~/.docker/config.json
+      #      docker_image:
+      #        dockerfile: Dockerfile.envoy
+      #        path: "{{ qat_envoy_dest }}"
+      #        name: envoy-qat
+      #        tag: devel
       command: docker image build -t envoy-qat:devel --no-cache --pull -f Dockerfile.envoy .
       args:
         chdir: "{{ qat_envoy_dest }}"
+      tags:
+        - "docker-build"
     - name: create qat device plugin docker image
       command: /bin/make intel-qat-plugin
       args:
         chdir: "{{ qat_envoy_dest }}/intel-device-plugins-for-kubernetes"
-#      make:
-#        chdir: "{{ qat_driver_dest }}/intel-device-plugins-for-kubernetes"
-#        target: intel-qat-plugin
+        #      make:
+        #        chdir: "{{ qat_driver_dest }}/intel-device-plugins-for-kubernetes"
+        #        target: intel-qat-plugin
+      tags:
+        - "docker-build"
     - name: create qat device configmap
       command: "/usr/local/bin/kubectl apply -f {{ qat_envoy_dest }}/intel-device-plugins-for-kubernetes/deployments/qat_plugin/qat_plugin_default_configmap.yaml"
       tags: "plugin"
@@ -88,30 +124,3 @@
       command: "/usr/local/bin/kubectl apply -f {{ qat_envoy_dest }}/intel-device-plugins-for-kubernetes/deployments/qat_plugin/qat_plugin_kernel_mode.yaml"
       tags:
         - "plugin"
-    - name: get qat devices
-      shell: /usr/local/bin/adf_ctl status | grep up | awk '{print $4 substr($1, 4)}' | tr -d ','
-      register: qat_devices
-      tags:
-        - "driver"
-    - name: ensure SHIM config section
-      blockinfile:
-        dest: "/etc/{{ item }}.conf"
-        block: |
-          [SHIM]
-          NumberCyInstances = 1
-          NumberDcInstances = 0
-          NumProcesses = 2
-          LimitDevAccess = 0
-
-          # Crypto - User instance #0
-          Cy0Name = "UserCY0"
-          Cy0IsPolled = 1
-          # List of core affinities
-          Cy0CoreAffinity = 0
-      loop: "{{ qat_devices.stdout_lines }}"
-      tags:
-        - "driver"
-    - name: restart qat services
-      command: /usr/local/bin/adf_ctl restart
-      tags:
-        - "driver"

@@ -107,4 +107,6 @@
       service:
         name: "qat_service"
         state: started
-        enabled: yes 
+        enabled: yes
+    - name: Create simbolic link
+      shell: "ln -fs /usr/local/bin/adf_ctl /usr/bin/adf_ctl"

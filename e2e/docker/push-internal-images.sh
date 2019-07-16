@@ -1,6 +1,6 @@
 #!/bin/bash
 # Script to publish qat images in the internal registry.
-source ./e2e/vars.sh
+DOCKER_QAT_REGISTRY=${DOCKER_QAT_REGISTRY:-"127.0.0.1:5000"}
 
 docker tag envoy-qat:devel ${DOCKER_QAT_REGISTRY}/envoy-qat:devel
 docker tag envoy-qat:clr ${DOCKER_QAT_REGISTRY}/envoy-qat:clr

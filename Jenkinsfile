@@ -43,7 +43,7 @@ pipeline {
             stage ('Intel-QAT-Plugin') {
               steps {
                 retry(count: 3) {
-                  sh 'cd ./intel-device-plugins-for-kubernetes && make intel-qat-plugin'
+                  sh 'make -f ./e2e/Makefile intel-qat-plugin'
                 }
               }
             }
@@ -126,9 +126,7 @@ pipeline {
           }
           post {
             always {
-              sh './e2e/k8s/clean.sh'
-              sh './e2e/docker/clean.sh'
-              sh 'sleep 60s'
+              sh './e2e/qat/cluster-clean.sh'
               deleteDir()
             }
           }
@@ -196,9 +194,7 @@ pipeline {
           }
           post {
             always {
-              sh './e2e/k8s/clean.sh'
-              sh './e2e/docker/clean.sh'
-              sh 'sleep 60s'
+              sh './e2e/qat/cluster-clean.sh'
               deleteDir()
             }
           }
@@ -243,8 +239,7 @@ pipeline {
           post {
             always {
               stash name: "dh895xcc", includes: "dh895xcc/**/*"
-              sh './e2e/k8s/clean.sh'
-              sh './e2e/docker/clean.sh'
+              sh './e2e/qat/cluster-clean.sh'
               deleteDir()
             }
           }
@@ -285,8 +280,7 @@ pipeline {
           post {
             always {
               stash name: "c6xx", includes: "c6xx/**/*"
-              sh './e2e/k8s/clean.sh'
-              sh './e2e/docker/clean.sh'
+              sh './e2e/qat/cluster-clean.sh'
               deleteDir()
             }
           }
