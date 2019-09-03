@@ -10,10 +10,10 @@ if [ -n "$SSH_KEY" ]; then
   cat ${SSH_KEY} > ./key.pem && chmod 400 ./key.pem
   DEPLOY=boringssl-nginx-behind-envoy-deployment RUN=docker CLIENT=${K6_RUNNER} TEST=loopback1 TAG=boringssl ./e2e/k6/run.sh
   DEPLOY=nginx-behind-envoy-deployment RUN=docker CLIENT=${K6_RUNNER} TEST=loopback1 TAG=openssl ./e2e/k6/run.sh
-  DEPLOY=nginx-behind-envoy-deployment RUN=docker CLIENT=${K6_RUNNER} TEST=loopback1 TAG=openssl-clr IMAGE=envoy-qat:clr ./e2e/k6/run.sh
+  DEPLOY=nginx-behind-envoy-deployment RUN=docker CLIENT=${K6_RUNNER} TEST=loopback1 TAG=openssl-clr IMAGE=envoy-qat-clr ./e2e/k6/run.sh
   rm -rf ./key.pem
 else
   DEPLOY=boringssl-nginx-behind-envoy-deployment RUN=docker TEST=loopback1 TAG=boringssl ./e2e/k6/run.sh
   DEPLOY=nginx-behind-envoy-deployment RUN=docker TEST=loopback1 TAG=openssl ./e2e/k6/run.sh
-  DEPLOY=nginx-behind-envoy-deployment RUN=docker TEST=loopback1 TAG=openssl-clr IMAGE=envoy-qat:clr ./e2e/k6/run.sh
+  DEPLOY=nginx-behind-envoy-deployment RUN=docker TEST=loopback1 TAG=openssl-clr IMAGE=envoy-qat-clr ./e2e/k6/run.sh
 fi

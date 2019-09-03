@@ -24,7 +24,7 @@ for CPU in ${CPUS[@]}; do
   ./e2e/k8s/clean-deployment.sh;
   sed -i "s/cpu: [2-3]/cpu: $CPU/g" ./deployments/${DEPLOY}.yaml;
   if [ -n "$IMAGE" ]; then
-    sed -i "s/image: .*:devel/image: ${IMAGE}/g" ./deployments/${DEPLOY}.yaml;
+    sed -i "s/image: .*:devel/image: ${IMAGE}:devel/g" ./deployments/${DEPLOY}.yaml;
   fi
   kubectl apply -f ./deployments/${DEPLOY}.yaml && sleep 30s;
   STATUS=$(kubectl get pods | grep envoy | awk '{print $3}');

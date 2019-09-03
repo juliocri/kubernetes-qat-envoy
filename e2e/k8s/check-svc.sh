@@ -5,7 +5,7 @@ source ./e2e/vars.sh
 
 # If a image is defined as variable then we switch the value in the deploy file;
 if [ -n "$IMAGE" ]; then
-  sed -i "s/image: .*:devel/image: ${IMAGE}/g" ./deployments/${DEPLOY}.yaml;
+  sed -i "s/image: .*:devel/image: ${IMAGE}:devel/g" ./deployments/tmp/${DEPLOY}.yaml;
 fi
 
 kubectl apply -f ./deployments/${DEPLOY}.yaml && sleep 30s;
