@@ -1,4 +1,4 @@
-images: envoy-qat envoy-qat-clr envoy-boringssl-qat intel-qat-plugin
+images: envoy-qat intel-qat-plugin
 
 envoy-qat:
 	docker image build -t envoy-qat:devel -f Dockerfile.envoy . --no-cache

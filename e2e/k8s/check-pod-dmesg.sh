@@ -20,9 +20,10 @@ if [ "$STATUS" == "Running" ]; then
     OUT=$(kubectl exec ${POD} dmesg | grep -i ioctl | grep -i invalid)
   fi
   # if $OUT is not empty, then some invalid ioctl messages were found.
+  # only print a warning since the qat device can work even with invalids
+  # ioctls.
   if [ -n "$OUT" ]; then
-    echo "ERROR: Invalid ioctl messages found."
-    exit 1;
+    echo "WARNING: Invalid ioctl messages found."
   fi
 else
   echo "ERROR: pod not running.";

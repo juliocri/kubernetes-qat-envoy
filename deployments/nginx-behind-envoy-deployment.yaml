@@ -111,7 +111,8 @@ spec:
           args:
             - "-c"
             - "/etc/envoy/config/envoy-conf.yaml"
-            - "--cpuset-threads"
+            - "--concurrency"
+            - "6"
           env:
             - name: OPENSSL_CONF
               value: /etc/envoy/config/openssl.cnf
@@ -139,4 +140,3 @@ spec:
         - name: config
           configMap:
             name: envoy-sidecar-config
-
