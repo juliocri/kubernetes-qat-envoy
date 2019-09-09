@@ -1,4 +1,4 @@
-def qat_nodes = ["dh895xcc", "c6xx"]
+def qat_nodes = ["dh895xcc", "c6xx", "c3xxx"]
 
 def parallelE2EStagesMap = qat_nodes.collectEntries {
   ["${it}" : generateE2EStage(it)]
